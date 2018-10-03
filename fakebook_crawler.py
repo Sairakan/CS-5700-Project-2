@@ -24,6 +24,8 @@ password = args.password
 # takes a HTTP message and returns the raw header and html as separate strings
 def parseResponse(response):
     s = response.split('\n\n', 1)
+    if len(s) < 2:
+        return s[0], ''
     return s[0], s[1]
 
 def getCookie(headers, cookiename):
@@ -35,11 +37,11 @@ def getCookie(headers, cookiename):
 # takes a HTTP message and returns a dictionary of the headers
 def parseHeaders(rawheaders):
     headers = {}
-    rawheaders = rawheaders.split('\r\n')[1:-1]
+    rawheaders = rawheaders.splitlines()[1:-1]
     for s in rawheaders:
         header = s.split(':', 1)
         if headers.has_key(header[0]):
-            headers[header[0]] += '\n' + header[1]
+            headers[header[0]] = headers.get(header[0]) + '\n' + header[1]
         else:
             headers[header[0]] = header[1]
     return headers
