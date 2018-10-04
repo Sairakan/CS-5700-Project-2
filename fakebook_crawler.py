@@ -62,6 +62,7 @@ Host: cs5700f18.ccs.neu.edu\r\n\r\n'''
     else:
         print('timeout')
     
+    print response
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     return getCookie(headers, 'csrftoken')
@@ -78,18 +79,20 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
     content = 'username=' + username + '&password=' + password \
         + '&csrfmiddlewaretoken=' + csrftoken + '&next=%2Ffakebook%2F' + '\r\n'
     message = headers + content
-    s.send(message)
     response = ''
     try:
-        readable, writable, errored = select.select([s,], [], [], 10)
+        readable, writable, errored = select.select([], [s,], [], 10)
     except select.error:
         s.close()
         exit()
-    if len(readable) > 0:
+    if len(writable) > 0:
+        s.send(message)
+        print message
         response = s.recv(8192)
     else:
         print('timeout')
     
+    print response
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     return getCookie(headers, 'sessionid')
