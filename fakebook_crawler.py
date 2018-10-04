@@ -96,9 +96,11 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     return getCookie(headers, 'sessionid')
-    
-def handleMessage(message, s):
-    print message
+
+# takes the socket, the csrftoken, and the sessionid of the logged-in user and 
+# crawls Fakebook to find the secret flags
+def crawl(s, csrftoken, sessionid):
+    pass
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((base_url, DEFAULT_PORT))
@@ -111,3 +113,4 @@ sessionid = login(s, username, password, csrftoken)
 print sessionid
 
 # Event loop
+crawl(s, csrftoken, sessionid)
