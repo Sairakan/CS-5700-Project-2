@@ -7,6 +7,7 @@ This file contains the code for CS 5700 Project 2
 """
 
 import socket, select, argparse, htmllib, xml
+from HTMLParser import HTMLParser
 
 parser = argparse.ArgumentParser(description='Client script for Project 2.')
 parser.add_argument('username', help='the username of the account')
@@ -66,11 +67,13 @@ def getResponse(s, message):
         bodylength = int(headers['Content-Length'])-1
         while len(rawhtml) < bodylength:
             rawhtml += s.recv(8192)
-    print 'RESPONSE:'
-    print rawheaders
-    print rawhtml
+    print('RESPONSE:')
+    print(rawheaders)
+    print(rawhtml)
+
+    getLinks(rawhtml)
+
     return headers, rawhtml
-    
 
 # Performs a GET from the fakebook homepage to get a CSRF token
 def getCSRFToken(s):
@@ -99,6 +102,28 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
 def crawl(s, csrftoken, sessionid):
     pass
 
+class MyHTMLParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.list = []
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            for name, value in attrs:
+                if name == "href":
+                    self.list.append(value)
+
+
+# Gets links in raw html as list, to be used as a queue
+def getLinks(html):
+    parser = MyHTMLParser()
+    parser.feed(html);
+
+
+    print("LIST OF LINKS: ")
+    print(parser.list)
+    print("")
+
+################################################################################
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((base_url, DEFAULT_PORT))
 
@@ -107,7 +132,15 @@ csrftoken = getCSRFToken(s)
 
 # login and get sessionid
 sessionid = login(s, username, password, csrftoken)
-print sessionid
+print(sessionid)
 
 # Event loop
 #crawl(s, csrftoken, sessionid)
+
+
+
+
+
+# RESOURCES!
+# http://www.netinstructions.com/how-to-make-a-web-crawler-in-under-50-lines-of-python-code/
+# ^ can't use urllib though
