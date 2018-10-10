@@ -48,7 +48,7 @@ def parseHeaders(rawheaders):
     return headers
 
 def getResponse(s, message):
-    print 'MESSAGE:\n' + message
+    print ('MESSAGE:\n' + message)
     s.send(message)
     response = ''
     try:
@@ -71,7 +71,8 @@ def getResponse(s, message):
     print(rawheaders)
     print(rawhtml)
 
-    getLinks(rawhtml)
+    parser = LinkParser()
+    parser.getLinks(rawhtml, base_url)
 
     return headers, rawhtml
 
@@ -102,26 +103,23 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
 def crawl(s, csrftoken, sessionid):
     pass
 
-class MyHTMLParser(HTMLParser):
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self.list = []
+class LinkParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == "a":
             for name, value in attrs:
                 if name == "href":
-                    self.list.append(value)
+                    newUrl = self.baseUrl + value
+                    self.list = self.list + [newUrl]
+    
+    # Gets links in raw html as list, to be used as a queue
+    def getLinks(self, html, baseUrl):
+        self.list = []
+        self.baseUrl = baseUrl
+        self.feed(html) 
 
-
-# Gets links in raw html as list, to be used as a queue
-def getLinks(html):
-    parser = MyHTMLParser()
-    parser.feed(html);
-
-
-    print("LIST OF LINKS: ")
-    print(parser.list)
-    print("")
+        print("LIST OF LINKS: ")
+        print(self.list)
+        print("")
 
 ################################################################################
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
