@@ -6,7 +6,7 @@ Authors: Jason Teng, Seung Son
 This file contains the code for CS 5700 Project 2
 """
 
-import socket, select, argparse, htmllib, xml
+import socket, select, argparse, htmllib, xml, time
 
 parser = argparse.ArgumentParser(description='Client script for Project 2.')
 parser.add_argument('username', help='the username of the account')
@@ -23,7 +23,7 @@ password = args.password
 
 # takes a HTTP message and returns the raw header and html as separate strings
 def parseResponse(response):
-    s = response.split('\n\n', 1)
+    s = response.split('\r\n\r\n', 1)
     if len(s) < 2:
         return s[0], ''
     return s[0], s[1]
@@ -62,9 +62,13 @@ Host: cs5700f18.ccs.neu.edu\r\n\r\n'''
     else:
         print('timeout')
     
-    print response
+    print 'RESPONSE:\n' + response
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
+    if headers.has_key('Content-Length'):
+        bodylength = int(headers['Content-Length'])-1
+        while len(rawhtml) < bodylength:
+            rawhtml += s.recv(8192)
     return getCookie(headers, 'csrftoken')
 
 
@@ -92,9 +96,13 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
     else:
         print('timeout')
     
-    print response
+    print 'RESPONSE:\n' + response
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
+    if headers.has_key('Content-Length'):
+        bodylength = int(headers['Content-Length'])-1
+        while len(rawhtml) < bodylength:
+            rawhtml += s.recv(8192)
     return getCookie(headers, 'sessionid')
 
 # takes the socket, the csrftoken, and the sessionid of the logged-in user and 
@@ -113,4 +121,4 @@ sessionid = login(s, username, password, csrftoken)
 print sessionid
 
 # Event loop
-crawl(s, csrftoken, sessionid)
+#crawl(s, csrftoken, sessionid)
