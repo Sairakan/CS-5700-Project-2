@@ -144,7 +144,8 @@ class LinkParser(HTMLParser):
             for name, value in attrs:
                 if name == "href":
                     newUrl = self.baseUrl + value
-                    self.list = self.list + [newUrl]
+                    if newUrl not in self.list:
+                        self.list = self.list + [newUrl]
     
     # Gets links in raw html as list, to be used as a queue
     def getLinks(self, html, baseUrl):
