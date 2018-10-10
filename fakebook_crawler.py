@@ -6,7 +6,7 @@ Authors: Jason Teng, Seung Son
 This file contains the code for CS 5700 Project 2
 """
 
-import socket, select, argparse, htmllib, xml, time
+import socket, select, argparse, htmllib, xml
 
 parser = argparse.ArgumentParser(description='Client script for Project 2.')
 parser.add_argument('username', help='the username of the account')
@@ -46,10 +46,8 @@ def parseHeaders(rawheaders):
             headers[header[0]] = header[1]
     return headers
 
-# Performs a GET from the fakebook homepage to get a CSRF token
-def getCSRFToken(s):
-    message = 'GET http://' + base_url + '''/accounts/login/?next=/fakebook/ HTTP/1.1
-Host: cs5700f18.ccs.neu.edu\r\n\r\n'''
+def getResponse(s, message):
+    print 'MESSAGE:\n' + message
     s.send(message)
     response = ''
     try:
@@ -62,13 +60,23 @@ Host: cs5700f18.ccs.neu.edu\r\n\r\n'''
     else:
         print('timeout')
     
-    print 'RESPONSE:\n' + response
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     if headers.has_key('Content-Length'):
         bodylength = int(headers['Content-Length'])-1
         while len(rawhtml) < bodylength:
             rawhtml += s.recv(8192)
+    print 'RESPONSE:'
+    print rawheaders
+    print rawhtml
+    return headers, rawhtml
+    
+
+# Performs a GET from the fakebook homepage to get a CSRF token
+def getCSRFToken(s):
+    message = 'GET http://' + base_url + '''/accounts/login/?next=/fakebook/ HTTP/1.1
+Host: cs5700f18.ccs.neu.edu\r\n\r\n'''
+    headers, rawhtml = getResponse(s, message)
     return getCookie(headers, 'csrftoken')
 
 
@@ -83,26 +91,7 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
     content = 'username=' + username + '&password=' + password \
         + '&csrfmiddlewaretoken=' + csrftoken + '&next=%2Ffakebook%2F' + '\r\n'
     message = headers + content
-    response = ''
-    try:
-        readable, writable, errored = select.select([], [s,], [], 10)
-    except select.error:
-        s.close()
-        exit()
-    if len(writable) > 0:
-        s.send(message)
-        print message
-        response = s.recv(8192)
-    else:
-        print('timeout')
-    
-    print 'RESPONSE:\n' + response
-    rawheaders, rawhtml = parseResponse(response)
-    headers = parseHeaders(rawheaders)
-    if headers.has_key('Content-Length'):
-        bodylength = int(headers['Content-Length'])-1
-        while len(rawhtml) < bodylength:
-            rawhtml += s.recv(8192)
+    headers, rawhtml = getResponse(s, message)
     return getCookie(headers, 'sessionid')
 
 # takes the socket, the csrftoken, and the sessionid of the logged-in user and 
