@@ -113,8 +113,8 @@ def crawl(s, csrftoken, sessionid):
             # Connect to page and get raw html. This is so wrong.
             # Check for URL that isn't Fakebook.
             # Error handling.
-            headers = 'GET http://' + url + ''' HTTP/1.1
-                Cookie: ''' + sessionid
+            message = 'GET http://' + url + ''' HTTP/1.1
+Cookie: ''' + sessionid
 
             #These prints are just for debugging
             print ("BEFORE REQUEST!!!!!\n\n\n\n")
@@ -169,11 +169,3 @@ print(sessionid)
 
 # Event loop
 crawl(s, csrftoken, sessionid)
-
-
-
-
-
-# RESOURCES!
-# http://www.netinstructions.com/how-to-make-a-web-crawler-in-under-50-lines-of-python-code/
-# ^ can't use urllib though
