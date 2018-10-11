@@ -109,9 +109,18 @@ def crawl(s, csrftoken, sessionid):
         try:
             print("Visiting: " + url)
             
-            #TODO:
-            #Connect to page and get raw html
-            
+            # TODO:
+            # Connect to page and get raw html. This is so wrong.
+            # Check for URL that isn't Fakebook.
+            # Error handling.
+            headers = 'GET http://' + url + ''' HTTP/1.1
+                Cookie: ''' + sessionid
+
+            #These prints are just for debugging
+            print ("BEFORE REQUEST!!!!!\n\n\n\n")
+            headers, rawhtml = getResponse(s, message)
+            print ("REQUEST WENT THROUGH!!!!!\n\n\n\n")
+
             if secretFlagTag in rawhtml:
                 secretFlagIndex = rawhtml.find(secretFlagTag)+len(secretFlagTag)
                 secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
