@@ -71,9 +71,6 @@ def getResponse(s, message):
     print(rawheaders)
     print(rawhtml)
 
-    parser = LinkParser()
-    parser.getLinks(rawhtml, base_url)
-
     return headers, rawhtml
 
 # Performs a GET from the fakebook homepage to get a CSRF token
@@ -101,43 +98,36 @@ Content-Length: ''' + str(40 + len(username) + len(password) + len(csrftoken)) +
 # takes the socket, the csrftoken, and the sessionid of the logged-in user and 
 # crawls Fakebook to find the secret flags
 def crawl(s, csrftoken, sessionid):
+    secretFlagList = []
+    secretFlagTag = "<h2 class='secret_flag' style=\"color:red\">FLAG: "
+    pagesToVisit = [base_url]
+    startIndex = 0
 
-    pass
+    for url in pagesToVisit[startIndex:]:
+        if len(secretFlagList) == 5:
+            break
+        try:
+            print("Visiting: " + url)
+            
+            #TODO:
+            #Connect to page and get raw html
+            
+            if secretFlagTag in rawhtml:
+                secretFlagIndex = rawhtml.find(secretFlagTag)+len(secretFlagTag)
+                secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
+                secretFlagList.append(secretFlag)
 
-##### And finally here is our spider. It takes in an URL, a word to find,
-##### and the number of pages to search through before giving up
-####def spider(url, word, maxPages):  
-####    pagesToVisit = [url]
-####    numberVisited = 0
-####    foundWord = False
-####    # The main loop. Create a LinkParser and get all the links on the page.
-####    # Also search the page for the word or string
-####    # In our getLinks function we return the web page
-####    # (this is useful for searching for the word)
-####    # and we return a set of links from that web page
-####    # (this is useful for where to go next)
-####    while numberVisited < maxPages and pagesToVisit != [] and not foundWord:
-####        numberVisited = numberVisited +1
-####        # Start from the beginning of our collection of pages to visit:
-####        url = pagesToVisit[0]
-####        pagesToVisit = pagesToVisit[1:]
-####        try:
-####            print(numberVisited, "Visiting:", url)
-####            parser = LinkParser()
-####            data, links = parser.getLinks(url)
-####            if data.find(word)>-1:
-####                foundWord = True
-####                # Add the pages that we visited to the end of our collection
-####                # of pages to visit:
-####                pagesToVisit = pagesToVisit + links
-####                print(" **Success!**")
-####        except:
-####            print(" **Failed!**")
-####    if foundWord:
-####        print("The word", word, "was found at", url)
-####    else:
-####        print("Word never found")
+            # Adds links in current page to list of links to crawl through
+            parser = LinkParser()
+            linkList = parser.getLinks(rawhtml, url)
+        except:
+            print("**Failed!**")
+        startIndex = startIndex + 1
 
+    for flag in secretFlagList:
+        print(flag)
+
+# Gets links in raw html as list
 class LinkParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == "a":
@@ -147,7 +137,6 @@ class LinkParser(HTMLParser):
                     if newUrl not in self.list:
                         self.list = self.list + [newUrl]
     
-    # Gets links in raw html as list, to be used as a queue
     def getLinks(self, html, baseUrl):
         self.list = []
         self.baseUrl = baseUrl
@@ -156,6 +145,7 @@ class LinkParser(HTMLParser):
         print("LIST OF LINKS: ")
         print(self.list)
         print("")
+        return self.list
 
 ################################################################################
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -169,7 +159,7 @@ sessionid = login(s, username, password, csrftoken)
 print(sessionid)
 
 # Event loop
-#crawl(s, csrftoken, sessionid)
+crawl(s, csrftoken, sessionid)
 
 
 
