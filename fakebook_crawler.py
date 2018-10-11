@@ -114,7 +114,7 @@ def crawl(s, csrftoken, sessionid):
             # Check for URL that isn't Fakebook.
             # Error handling.
             message = 'GET http://' + url + ''' HTTP/1.1
-Cookie: ''' + sessionid
+Cookie: sessionid=''' + sessionid
 
             #These prints are just for debugging
             print ("BEFORE REQUEST!!!!!\n\n\n\n")
