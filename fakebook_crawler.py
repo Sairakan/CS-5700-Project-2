@@ -23,6 +23,9 @@ DEFAULT_PORT = 80
 username = args.username
 password = args.password
 
+csrftoken = ''
+sessionid = ''
+
 # takes a HTTP message and returns the raw header and html as separate strings
 def parseResponse(response):
     s = response.split('\r\n\r\n', 1)
@@ -41,7 +44,7 @@ def parseHeaders(rawheaders):
     headers = {}
     rawheaders = rawheaders.splitlines()[1:-1]
     for s in rawheaders:
-        header = s.split(':', 1)
+        header = s.split(': ', 1)
         if headers.has_key(header[0]):
             headers[header[0]] = headers.get(header[0]) + '\n' + header[1]
         else:
@@ -63,10 +66,24 @@ def getResponse(s, message):
         print('timeout')
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
+    responsecode = rawheaders.splitlines()[0].split()[1]
+    if responsecode == '302' and len(sessionid) > 0:
+        newloc = headers['Location']
+        message = 'GET ' + newloc + ''' HTTP/1.1
+Host: cs5700f18.ccs.neu.edu
+Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
+        return getResponse(s, message)
     if headers.has_key('Content-Length'):
         bodylength = int(headers['Content-Length'])-1
         while len(rawhtml) < bodylength:
             rawhtml += s.recv(8192)
+    elif headers.has_key('Transfer-Encoding:') and headers['Transfer-Encoding'].lower() == 'chunked':
+        chunksize = rawhtml.splitlines()[0]
+        rawhtml = rawhtml[len(chunksize):]
+        while int(chunksize) > 0:
+            nexthtml = s.recv(8192)
+            chunksize = nexthtml.splitlines()[0]
+            rawhtml += nexthtml[len(chunksize):]
     print('RESPONSE:')
     print(rawheaders)
     print(rawhtml)
@@ -83,7 +100,7 @@ Host: cs5700f18.ccs.neu.edu\r\n\r\n'''
 
 # logs into Fakebook using the given socket, username, and password, and returns
 # the sessionid for the user session.
-def login(s, username, password, csrftoken):
+def login(s, username, password):
     headers = 'POST http://' + base_url + '''/accounts/login/ HTTP/1.1
 Host: cs5700f18.ccs.neu.edu
 Cookie: csrftoken=''' + csrftoken + ''';
@@ -175,7 +192,7 @@ s.connect((base_url, DEFAULT_PORT))
 csrftoken = getCSRFToken(s)
 
 # login and get sessionid
-sessionid = login(s, username, password, csrftoken)
+sessionid = login(s, username, password)
 print(sessionid)
 
 # Event loop
