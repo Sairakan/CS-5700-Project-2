@@ -52,7 +52,6 @@ def parseHeaders(rawheaders):
     return headers
 
 def getResponse(s, message):
-    print ('MESSAGE:\n' + message)
     s.send(message)
     response = ''
     try:
@@ -67,11 +66,20 @@ def getResponse(s, message):
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     responsecode = rawheaders.splitlines()[0].split()[1]
-    if responsecode == '302' and len(sessionid) > 0:
+    # check redirect
+    if responsecode == '301':
         newloc = headers['Location']
         message = 'GET ' + newloc + ''' HTTP/1.1
 Host: cs5700f18.ccs.neu.edu
 Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
+        return getResponse(s, message)
+    # check forbidden/not found
+    if responsecode == '403' or responsecode == '404':
+        return {}, ''
+    # check server error
+    if responsecode == '500':
+        s.close()
+        s.connect((base_url, DEFAULT_PORT))
         return getResponse(s, message)
     if headers.has_key('Content-Length'):
         bodylength = int(headers['Content-Length'])-1
@@ -84,9 +92,6 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
             nexthtml = s.recv(8192)
             chunksize = nexthtml.splitlines()[0]
             rawhtml += nexthtml[len(chunksize):]
-    print('RESPONSE:')
-    print(rawheaders)
-    print(rawhtml)
 
     return headers, rawhtml
 
