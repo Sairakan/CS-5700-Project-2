@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Authors: Jason Teng, Seung Son
@@ -60,7 +61,6 @@ def getResponse(s, message):
         response = s.recv(8192)
     else:
         print('timeout')
-    
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     if headers.has_key('Content-Length'):
@@ -101,37 +101,50 @@ def crawl(s, csrftoken, sessionid):
     secretFlagList = []
     secretFlagTag = "<h2 class='secret_flag' style=\"color:red\">FLAG: "
     pagesToVisit = [base_url]
-    startIndex = 0
 
-    for url in pagesToVisit[startIndex:]:
+    i = 0
+    while i < range(len(pagesToVisit)):
+        url = pagesToVisit[i]
         if len(secretFlagList) == 5:
             break
         try:
             print("Visiting: " + url)
             
-            # TODO:
-            # Connect to page and get raw html. This is so wrong.
-            # Check for URL that isn't Fakebook.
-            # Error handling.
-            message = 'GET http://' + url + ''' HTTP/1.1
-Cookie: sessionid=''' + sessionid
+            # TODO
+            message = 'GET ' + url + ''' HTTP/1.1
+Host: cs5700f18.ccs.neu.edu
+Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
 
-            #These prints are just for debugging
-            print ("BEFORE REQUEST!!!!!\n\n\n\n")
-            headers, rawhtml = getResponse(s, message)
-            print ("REQUEST WENT THROUGH!!!!!\n\n\n\n")
+            print ('Message:\n' + message)
+            s.send(message)
+            rawhtml = ''
+            try:
+                readable, writable, errored = select.select([s,], [], [], 30)
+            except select.error:
+                s.close()
+                exit()
+            if len(readable) > 0:
+                rawhtml = s.recv(8192)
+            else:
+                print('timeout')
 
+            print ("\nResponse: ")
+            print (rawhtml)
             if secretFlagTag in rawhtml:
                 secretFlagIndex = rawhtml.find(secretFlagTag)+len(secretFlagTag)
                 secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
                 secretFlagList.append(secretFlag)
+            else:
+                print ("flag not here yo \n\n")
 
             # Adds links in current page to list of links to crawl through
             parser = LinkParser()
             linkList = parser.getLinks(rawhtml, url)
+            pagesToVisit.extend(linkList)
+            print (pagesToVisit)
         except:
             print("**Failed!**")
-        startIndex = startIndex + 1
+        i += 1
 
     for flag in secretFlagList:
         print(flag)
@@ -142,18 +155,16 @@ class LinkParser(HTMLParser):
         if tag == "a":
             for name, value in attrs:
                 if name == "href":
-                    newUrl = self.baseUrl + value
-                    if newUrl not in self.list:
-                        self.list = self.list + [newUrl]
+                    if value[0] == '/':
+                        newUrl = self.baseUrl + value
+                        if newUrl not in self.list:
+                            self.list = self.list + [newUrl]
     
     def getLinks(self, html, baseUrl):
         self.list = []
         self.baseUrl = baseUrl
         self.feed(html) 
 
-        print("LIST OF LINKS: ")
-        print(self.list)
-        print("")
         return self.list
 
 ################################################################################
