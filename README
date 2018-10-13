@@ -1,0 +1,13 @@
+Seung Son: 001894138
+
+Jason Teng: 
+
+Proper documentation should accompany your project. A 3-line README file will be unacceptable. Make sure to put your name+NUID (for each member) inside the README. Make sure to explain at least 2 scenarios that you tested (e.g. gave bad input as one of the arguments, used specific network configuration, etc).
+
+
+
+<Jason, add your stuff up here>
+
+Seung Son worked on the implementation of the web crawler, starting from the search of links within the response's raw html to laying the foundations for looping through Fakebook in order to find the secret flags. The implementation of the link-searching was relatively smooth, since we used a simple list as our queue of links and checked new URL found while crawling with the elements of the list for duplicates before adding them in. The web crawler is set to crawl through only Fakebook by checking if the URL begins with "/", showing that it is under the base URL of Fakebook. The bash file for the command of ./webcrawler [username] [password] was relatively simple. Using only one or no arguments will tell you that you are missing the required number of arguments. If you input the wrong username or password or have more than two arguments put in, the script will tell you that there is a mistake in your arguments.
+
+There were quite a few bugs that appeared during the looping so we both worked together to fix these. Although there were other problems such as misformatted "GET" requests, the main problem appeared with HTTP 1.1's chunked transfer encoding, which made parsing difficult. <ADD STUFF?>

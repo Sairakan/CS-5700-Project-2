@@ -150,9 +150,14 @@ def crawl(csrftoken, sessionid):
     secretFlagTag = "<h2 class='secret_flag' style=\"color:red\">FLAG: "
     pagesToVisit = ['/fakebook/']
     visited = []
+    url = ''
 
     while len(secretFlagList) < 5:
-        url = pagesToVisit[0]
+        try:
+            url = pagesToVisit[0]
+        except:
+            print "There is an error with your command line arguments"
+            exit()
         visited.append(url)
         pagesToVisit.remove(url)
         
