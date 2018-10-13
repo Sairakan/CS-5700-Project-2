@@ -96,9 +96,15 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
         rawhtml = ''
         i = 0
         while True:
-            chunksize = chunkedhtml[i]
-            if int(chunksize, 16) == 0:
-                break
+            try:
+                chunksize = chunkedhtml[i]
+                if int(chunksize, 16) == 0:
+                    break
+            except:
+                newhtml = s.recv(8192)
+                chunkedhtml = newhtml.split('\r\n')
+                i = 0
+                continue
             rawhtml += chunkedhtml[i+1]
             i += 2
 
