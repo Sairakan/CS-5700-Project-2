@@ -91,9 +91,16 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
             rawhtml += s.recv(8192)
     # read chunked encoding
     elif headers.has_key('Transfer-Encoding') and headers['Transfer-Encoding'].lower() == 'chunked':
-        chunks = rawhtml.split('\r\n')[1::2]
-        print chunks
-        rawhtml = ''.join(chunks)
+        print 'CHUNKED:\n' + rawhtml
+        chunkedhtml = rawhtml.split('\r\n')
+        rawhtml = ''
+        i = 0
+        while True:
+            chunksize = chunkedhtml[i]
+            if int(chunksize, 16) == 0:
+                break
+            rawhtml += chunkedhtml[i+1]
+            i += 2
 
     print 'RESPONSE: (' + str(len(response)) + ')\n' + rawheaders + '\n'
     print rawhtml + '\n'
