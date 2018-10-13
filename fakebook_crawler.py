@@ -50,11 +50,11 @@ def parseHeaders(rawheaders):
 
 def getResponse(message, csrftoken, sessionid):
     global s
-    print 'MESSAGE:\n' + message
+    #print 'MESSAGE:\n' + message
     s.send(message)
     response = ''
     try:
-        readable, writable, errored = select.select([s,], [], [], 30)
+        readable, writable, errored = select.select([s,], [], [], 5)
     except select.error:
         s.close()
         exit()
@@ -91,7 +91,7 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
             rawhtml += s.recv(8192)
     # read chunked encoding
     elif headers.has_key('Transfer-Encoding') and headers['Transfer-Encoding'].lower() == 'chunked':
-        print 'CHUNKED:\n' + rawhtml
+        #print 'CHUNKED:\n' + rawhtml
         chunkedhtml = rawhtml.split('\r\n')
         rawhtml = ''
         i = 0
@@ -101,15 +101,24 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
                 if int(chunksize, 16) == 0:
                     break
             except:
-                newhtml = s.recv(8192)
+                newhtml = ''
+                try:
+                    readable, writable, errored = select.select([s,], [], [], 5)
+                except select.error:
+                    s.close()
+                    exit()
+                if len(readable) > 0:
+                    newhtml = s.recv(8192)
+                else:
+                    print('timeout')
                 chunkedhtml = newhtml.split('\r\n')
                 i = 0
                 continue
             rawhtml += chunkedhtml[i+1]
             i += 2
 
-    print 'RESPONSE: (' + str(len(response)) + ')\n' + rawheaders + '\n'
-    print rawhtml + '\n'
+    #print 'RESPONSE: (' + str(len(response)) + ')\n' + rawheaders + '\n'
+    #print rawhtml + '\n'
     return headers, rawhtml
 
 # Performs a GET from the fakebook homepage to get a CSRF token
@@ -163,13 +172,14 @@ Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
             secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
             secretFlagList.append(secretFlag)
         else:
-            print ("flag not here yo \n\n")
+            #print ("flag not here yo \n\n")
+            pass
 
         # Adds links in current page to list of links to crawl through
         parser = LinkParser()
         linkList = parser.getLinks(rawhtml, url)
         for link in linkList:
-            if visited.count(link) == 0:
+            if link not in visited:
                 pagesToVisit.append(link)
         #print (pagesToVisit)
 
