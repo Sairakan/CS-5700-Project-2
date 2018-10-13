@@ -30,6 +30,7 @@ def parseResponse(response):
         return s[0], ''
     return s[0], s[1]
 
+# finds the cookies to look for the csrf token and session id for staying logged in
 def getCookie(headers, cookiename):
     cookies = headers['Set-Cookie']
     cstart = cookies.find(cookiename + '=') + len(cookiename) + 1
@@ -48,9 +49,9 @@ def parseHeaders(rawheaders):
             headers[header[0]] = header[1]
     return headers
 
+# sends the message and gets the appropriate response
 def getResponse(message, csrftoken, sessionid):
     global s
-    #print 'MESSAGE:\n' + message
     s.send(message)
     response = ''
     try:
@@ -91,7 +92,6 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
             rawhtml += s.recv(8192)
     # read chunked encoding
     elif headers.has_key('Transfer-Encoding') and headers['Transfer-Encoding'].lower() == 'chunked':
-        #print 'CHUNKED:\n' + rawhtml
         chunkedhtml = rawhtml.split('\r\n')
         rawhtml = ''
         i = 0
@@ -116,9 +116,6 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
                 continue
             rawhtml += chunkedhtml[i+1]
             i += 2
-
-    #print 'RESPONSE: (' + str(len(response)) + ')\n' + rawheaders + '\n'
-    #print rawhtml + '\n'
     return headers, rawhtml
 
 # Performs a GET from the fakebook homepage to get a CSRF token
@@ -156,11 +153,9 @@ def crawl(csrftoken, sessionid):
 
     while len(secretFlagList) < 5:
         url = pagesToVisit[0]
-        print("Visiting: " + url)
         visited.append(url)
         pagesToVisit.remove(url)
         
-        # TODO
         message = 'GET ' + url + ''' HTTP/1.1
 Host: cs5700f18.ccs.neu.edu
 Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
@@ -171,9 +166,6 @@ Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
             secretFlagIndex = rawhtml.find(secretFlagTag)+len(secretFlagTag)
             secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
             secretFlagList.append(secretFlag)
-        else:
-            #print ("flag not here yo \n\n")
-            pass
 
         # Adds links in current page to list of links to crawl through
         parser = LinkParser()
@@ -181,7 +173,6 @@ Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
         for link in linkList:
             if link not in visited:
                 pagesToVisit.append(link)
-        #print (pagesToVisit)
 
     for flag in secretFlagList:
         print(flag)
@@ -189,11 +180,15 @@ Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
 # Gets links in raw html as list
 class LinkParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
+        # looks for links
         if tag == "a":
             for name, value in attrs:
                 if name == "href":
+                    # checks that the link is a part of the base url of Fakebook
                     if value[0] == '/':
                         newUrl = value
+                        # prevents infinite looping by checking if the new url is already
+                        # in the list of links to visit
                         if newUrl not in self.list:
                             self.list = self.list + [newUrl]
     
