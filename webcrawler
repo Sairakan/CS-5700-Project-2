@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+python fakebook_crawler.py $1 $2
