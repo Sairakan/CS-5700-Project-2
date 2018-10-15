@@ -56,7 +56,7 @@ def getResponse(message, csrftoken, sessionid):
     response = ''
     while True:
         try:
-            readable, writable, errored = select.select([s,], [], [], 5)
+            readable, writable, errored = select.select([s,], [], [], 1)
         except select.error:
             s.close()
             exit()
@@ -116,7 +116,7 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
                 newhtml = ''
                 while True:
                     try:
-                        readable, writable, errored = select.select([s,], [], [], 5)
+                        readable, writable, errored = select.select([s,], [], [], 1)
                     except select.error:
                         s.close()
                         exit()
@@ -179,6 +179,7 @@ def crawl(csrftoken, sessionid):
 Host: cs5700f18.ccs.neu.edu
 Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
 
+        #print 'flags: ' + str(len(secretFlagList)) + ' Visiting ' + url
         headers, rawhtml = getResponse(message, csrftoken, sessionid)
         # search for and add secret flag if it exists
         if secretFlagTag in rawhtml:
