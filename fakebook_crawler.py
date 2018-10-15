@@ -54,22 +54,30 @@ def getResponse(message, csrftoken, sessionid):
     global s
     s.send(message)
     response = ''
-    try:
-        readable, writable, errored = select.select([s,], [], [], 5)
-    except select.error:
-        s.close()
-        exit()
-    if len(readable) > 0:
-        response = s.recv(8192)
-    else:
-        print('timeout')
+    while True:
+        try:
+            readable, writable, errored = select.select([s,], [], [], 5)
+        except select.error:
+            s.close()
+            exit()
+        if len(readable) > 0:
+            response = s.recv(8192)
+            break
+        else:
+            print('timeout')
+            return getResponse(message, csrftoken, sessionid)
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
     responsecode = rawheaders.splitlines()[0].split()[1]
     # check for connection close
     if headers.has_key('Connection') and headers['Connection'] == 'close':
         s.close()
-        s = socket.create_connection((base_url, DEFAULT_PORT))
+        while True:
+            try:
+                s = socket.create_connection((base_url, DEFAULT_PORT))
+                break
+            except:
+                pass
     # check redirect
     if responsecode == '301':
         newloc = headers['Location']
@@ -83,7 +91,12 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
     # check server error
     if responsecode == '500':
         s.close()
-        s = socket.create_connection((base_url, DEFAULT_PORT))
+        while True:
+            try:
+                s = socket.create_connection((base_url, DEFAULT_PORT))
+                break
+            except:
+                pass
         return getResponse(message, csrftoken, sessionid)
     # read rest of message body
     if headers.has_key('Content-Length'):
@@ -102,15 +115,18 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
                     break
             except:
                 newhtml = ''
-                try:
-                    readable, writable, errored = select.select([s,], [], [], 5)
-                except select.error:
-                    s.close()
-                    exit()
-                if len(readable) > 0:
-                    newhtml = s.recv(8192)
-                else:
-                    print('timeout')
+                while True:
+                    try:
+                        readable, writable, errored = select.select([s,], [], [], 5)
+                    except select.error:
+                        s.close()
+                        exit()
+                    if len(readable) > 0:
+                        newhtml = s.recv(8192)
+                        break
+                    else:
+                        print('timeout')
+                        return getResponse(message, csrftoken, sessionid)
                 chunkedhtml = newhtml.split('\r\n')
                 i = 0
                 continue
@@ -165,18 +181,21 @@ def crawl(csrftoken, sessionid):
 Host: cs5700f18.ccs.neu.edu
 Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
 
+        print 'Visiting ' + url
         headers, rawhtml = getResponse(message, csrftoken, sessionid)
         # search for and add secret flag if it exists
         if secretFlagTag in rawhtml:
             secretFlagIndex = rawhtml.find(secretFlagTag)+len(secretFlagTag)
             secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
-            secretFlagList.append(secretFlag)
+            if secretFlag not in secretFlagList:
+                print 'found flag'
+                secretFlagList.append(secretFlag)
 
         # Adds links in current page to list of links to crawl through
         parser = LinkParser()
         linkList = parser.getLinks(rawhtml, url)
         for link in linkList:
-            if link not in visited:
+            if link not in visited and link not in pagesToVisit:
                 pagesToVisit.append(link)
 
     for flag in secretFlagList:
@@ -205,7 +224,12 @@ class LinkParser(HTMLParser):
         return self.list
 
 ################################################################################
-s = socket.create_connection((base_url, DEFAULT_PORT))
+while True:
+    try:
+        s = socket.create_connection((base_url, DEFAULT_PORT))
+        break
+    except:
+        pass
 
 # GET from login page to get csrf token
 csrftoken = getCSRFToken()
