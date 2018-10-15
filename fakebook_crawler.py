@@ -64,7 +64,6 @@ def getResponse(message, csrftoken, sessionid):
             response = s.recv(8192)
             break
         else:
-            print('timeout')
             return getResponse(message, csrftoken, sessionid)
     rawheaders, rawhtml = parseResponse(response)
     headers = parseHeaders(rawheaders)
@@ -125,7 +124,6 @@ Cookie: csrftoken=''' + csrftoken + '''; sessionid=''' + sessionid
                         newhtml = s.recv(8192)
                         break
                     else:
-                        print('timeout')
                         return getResponse(message, csrftoken, sessionid)
                 chunkedhtml = newhtml.split('\r\n')
                 i = 0
@@ -181,14 +179,12 @@ def crawl(csrftoken, sessionid):
 Host: cs5700f18.ccs.neu.edu
 Cookie: csrftoken=''' + csrftoken + '; sessionid=' + sessionid + '\r\n\r\n'
 
-        print 'Visiting ' + url
         headers, rawhtml = getResponse(message, csrftoken, sessionid)
         # search for and add secret flag if it exists
         if secretFlagTag in rawhtml:
             secretFlagIndex = rawhtml.find(secretFlagTag)+len(secretFlagTag)
             secretFlag = rawhtml[secretFlagIndex:secretFlagIndex + 64]
             if secretFlag not in secretFlagList:
-                print 'found flag'
                 secretFlagList.append(secretFlag)
 
         # Adds links in current page to list of links to crawl through
